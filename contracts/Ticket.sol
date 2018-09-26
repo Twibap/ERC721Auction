@@ -27,6 +27,51 @@ contract KGEticket is ERC721Token{
 	// 티켓 사용 여부 기록 -> RSA 활용???
 	mapping(uint256 => bool) internal guaranteedTokensCheckIn;
 
+	// 티켓 거래용 전용 토큰
+	KGEtoken token;
+
+	constructor(address _token){
+		token = KGEtoken(_token);
+	}
+
+	/**
+	**	티켓 전송
+	**
+	**	티켓 구매자가 티켓 소유주에게 KGEtoken 전송을 승인(approve)하면,
+	**	티켓 소유주는 티켓을 구매자에게 전달한다.
+	**	@param 	_to 		티켓 구매자
+	**	@param 	_ticketId 	티켓 고유번호
+	**	@dev 	msg.sender	티켓 판매자
+	*/
+	function transferTicket(address _to, _ticketId) returns(bool){
+		require( msg.sender == ownerOf(_ticketId) );
+
+		uint256 price = token.allowance(_to, msg.sender);
+		uint256 ticketVal = getTicketValue(_ticketId);
+
+		require(price > 0);	// KGEtoken으로만 거래 가능하다.
+
+		if(price >= ticketval){		
+			// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
+
+			token.transferFrom(_to, msg.sender, ticketval);
+			approve(_to, _ticketId);
+			emit Approval(msg.sender, _to, _ticketId);
+			transferFrom(msg.sender, _to, _ticketId);
+
+		} else if (price < ticketVal){
+
+			token.transferFrom(_to, msg.sender, price);
+			approve(_to, _ticketId);
+			emit Approval(msg.sender, _to, _ticketId);
+			transferFrom(msg.sender, _to, _ticketId);
+
+		}
+
+		emit Transfer(msg.sender, _to, _ticketId);
+		return true;
+	}
+
 	/**
 	**	티켓 가격 확인 
 	*/
