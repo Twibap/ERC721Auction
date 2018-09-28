@@ -7,8 +7,9 @@
 // Wrong
 //const KGEcoinsale = artifacts.require("./TokenSale.sol");
 //const KGEcoin = artifacts.require("./Token.sol");
-const KGEcoinsale = artifacts.require("./KGEsale");
-const KGEcoin = artifacts.require("./KGEtoken");
+const KGEcoinsale = artifacts.require("KGEsale");
+const KGEcoin = artifacts.require("KGEtoken");
+const KGEticket = artifacts.require("KGEticket");
 
 module.exports = function (deployer, network, accounts) {
 	const rate = new web3.BigNumber(230000);	// 23만원
@@ -16,10 +17,13 @@ module.exports = function (deployer, network, accounts) {
 
 	// KGEcoinCrowdsale 발행 시 KGEcoin의 주소가 필요하기 때문에 
 	// KGEcoin이 발행된 뒤에 KGEcoinCrowdsale을 발행한다.
-	deployer.deploy(KGEcoin)
-		.then(function(){
+	deployer.deploy(KGEcoin).
+		then(function(){
 			return deployer.deploy(
 				KGEcoinsale, rate, wallet, KGEcoin.address);
+		}).
+		then(function(){
+			return deployer.deploy(KGEticket, KGEcoin.address);
 		});
 	
 	// 매개변수 network의 사용 방법

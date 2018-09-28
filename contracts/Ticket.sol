@@ -18,6 +18,9 @@ contract KGEticket is ERC721Token{
 	using SafeMath for uint256;
 	using AddressUtils for address;
 
+	string public name = "King, God, Emperor Ticket";
+	string public symbol = "KGET";
+
 	// 티켓 발행 가격
 	mapping (uint256 => uint256) internal ticketValue;
 
@@ -28,10 +31,11 @@ contract KGEticket is ERC721Token{
 	mapping(uint256 => bool) internal guaranteedTokensCheckIn;
 
 	// 티켓 거래용 전용 토큰
-	KGEtoken token;
+	address tokenAddr;
 
-	constructor(address _token){
-		token = KGEtoken(_token);
+	constructor(address _token) public{
+		tokenAddr = _token;
+	//	token = KGEtoken(_token);
 	}
 
 	/**
@@ -43,18 +47,20 @@ contract KGEticket is ERC721Token{
 	**	@param 	_ticketId 	티켓 고유번호
 	**	@dev 	msg.sender	티켓 판매자
 	*/
-	function transferTicket(address _to, _ticketId) returns(bool){
+	function transferTicket(address _to, uint256 _ticketId) public returns(bool){
 		require( msg.sender == ownerOf(_ticketId) );
+
+		KGEtoken token = KGEtoken(tokenAddr);
 
 		uint256 price = token.allowance(_to, msg.sender);
 		uint256 ticketVal = getTicketValue(_ticketId);
 
 		require(price > 0);	// KGEtoken으로만 거래 가능하다.
 
-		if(price >= ticketval){		
+		if(price >= ticketVal){		
 			// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
 
-			token.transferFrom(_to, msg.sender, ticketval);
+			token.transferFrom(_to, msg.sender, ticketVal);
 			approve(_to, _ticketId);
 			emit Approval(msg.sender, _to, _ticketId);
 			transferFrom(msg.sender, _to, _ticketId);
@@ -76,7 +82,7 @@ contract KGEticket is ERC721Token{
 	**	티켓 가격 확인 
 	*/
    	function getTicketValue(uint256 _ticketId) public view returns(uint256){
-		require(exists(_ticketId) === true);
+		require(exists(_ticketId) == true);
 		return ticketValue[_ticketId];
 	}
 
@@ -109,5 +115,10 @@ contract KGEticket is ERC721Token{
 
 		emit Transfer(address(0), _to, _tokenId);
 	}
-}
 
+	function mintTicket(address _to, uint256 _ticketId,	string _ticketURI) public{
+		_mint(_to, _ticketId);
+		super._setTokenURI(_ticketId, _ticketURI);
+	}
+
+}
