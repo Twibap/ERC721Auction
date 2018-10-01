@@ -15,6 +15,10 @@ import "../node_modules/openzeppelin-solidity/contracts/token/ERC20/TokenVesting
 contract KGEtoken is MintableToken, PausableToken{
   string public name = "King, God, Emperor Token";
   string public symbol = "KGE";
+
+  /*
+  ** 단위 1 Ether는 1 Won이다.
+  */
   uint8 public decimals = 18;
 
 }

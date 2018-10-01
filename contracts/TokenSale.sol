@@ -41,18 +41,14 @@ contract KGEsale is MintedCrowdsale, Ownable{
 
 	// 토큰 발행
 	function mintTokens(address _beneficiary, uint256 _amount) public onlyOwner {
-		// 자릿수 보정
-		// uint256 TOKENDECIMAL = 10**token.decimals();	// revert point 
-		uint256 TOKENDECIMAL = 10 ** 18;
-		uint256 KRWtoKGE_weiAmount = _amount * TOKENDECIMAL;	
-		_preValidatePurchase(_beneficiary, KRWtoKGE_weiAmount);
+		_preValidatePurchase(_beneficiary, _amount);
 
 		emit TokenPurchase(
 			msg.sender,
 			_beneficiary,
 			_amount,	// KRW
-			KRWtoKGE_weiAmount // Token
+			_amount		// Token
 		);
-		_deliverTokens(_beneficiary, KRWtoKGE_weiAmount);
+		_deliverTokens(_beneficiary, _amount);
 	}
 }

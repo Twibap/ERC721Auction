@@ -22,7 +22,7 @@ contract KGEticket is ERC721Token{
 	string public symbol = "KGET";
 
 	// 티켓 발행 가격
-	mapping (uint256 => uint256) internal ticketValue;
+	mapping (uint256 => uint256) internal ticketPrice;
 
 	// 공연 기획자 주소 == 2차 거래 시 발행 가격 초과금액 환수할 주소
 	mapping (uint256 => address) internal ticketGuarantor;
@@ -33,7 +33,7 @@ contract KGEticket is ERC721Token{
 	// 티켓 거래용 전용 토큰
 	address tokenAddr;
 
-	constructor(address _token) public{
+	constructor(address _token) public ERC721Token(name, symbol){
 		tokenAddr = _token;
 	//	token = KGEtoken(_token);
 	}
@@ -57,23 +57,19 @@ contract KGEticket is ERC721Token{
 
 		require(price > 0);	// KGEtoken으로만 거래 가능하다.
 
+		// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
 		if(price >= ticketVal){		
-			// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
+			price = ticketVal;
+		}
+		// else is (pice < ticketVal)
 
-			token.transferFrom(_to, msg.sender, ticketVal);
-			approve(_to, _ticketId);
-			emit Approval(msg.sender, _to, _ticketId);
-			transferFrom(msg.sender, _to, _ticketId);
-
-		} else if (price < ticketVal){
-
-			token.transferFrom(_to, msg.sender, price);
-			approve(_to, _ticketId);
-			emit Approval(msg.sender, _to, _ticketId);
-			transferFrom(msg.sender, _to, _ticketId);
-
+		if( token.transferFrom(_to, msg.sender, price) == false ){
+			return false;
 		}
 
+		approve(_to, _ticketId);
+		emit Approval(msg.sender, _to, _ticketId);
+		transferFrom(msg.sender, _to, _ticketId);
 		emit Transfer(msg.sender, _to, _ticketId);
 		return true;
 	}
@@ -83,7 +79,7 @@ contract KGEticket is ERC721Token{
 	*/
    	function getTicketValue(uint256 _ticketId) public view returns(uint256){
 		require(exists(_ticketId) == true);
-		return ticketValue[_ticketId];
+		return ticketPrice[_ticketId];
 	}
 
 	/**
@@ -116,9 +112,17 @@ contract KGEticket is ERC721Token{
 		emit Transfer(address(0), _to, _tokenId);
 	}
 
-	function mintTicket(address _to, uint256 _ticketId,	string _ticketURI) public{
+	function mintTicket(address _to, uint256 _ticketId,	uint256 _ticketPrice) public{
 		_mint(_to, _ticketId);
-		super._setTokenURI(_ticketId, _ticketURI);
+		_setTicketPrice(_ticketId, _ticketPrice);
+		//super._setTokenURI(_ticketId, _ticketURI);
+	}
+
+	function _setTicketPrice(uint256 _ticketId, uint256 _ticketPrice) internal{
+		require(exists(_ticketId));
+
+		uint256 TOKENDECIMAL = 10 ** 18;
+		ticketPrice[_ticketId] = _ticketPrice * TOKENDECIMAL;
 	}
 
 }
