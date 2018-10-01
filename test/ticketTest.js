@@ -38,7 +38,8 @@ contract("Ticket", function(accounts){
 		}).then(function(result){
 			console.log("Symbol is "+result);
 			console.log("Deploy Successful!");
-			return KGEticket.mintTicket(visitor_1, ticketId, ticketPrice,{from:manager});
+			var ticketPriceWei = web3.toWei(ticketPrice, "ether");
+			return KGEticket.mintTicket(visitor_1, ticketId, ticketPriceWei,{from:manager});
 
 		}).then(async(result)=>{
 			console.log("Mint ticket Successful!");
@@ -48,8 +49,8 @@ contract("Ticket", function(accounts){
 			assert.equal(isExists, true);
 
 			// ticketId 소유자 확인
-			var whoIsOwnerOf = await KGEticket.ownerOf.call(ticketId);
-			assert.equal(whoIsOwnerOf, visitor_1);
+			var ownerOfTicket = await KGEticket.ownerOf.call(ticketId);
+			assert.equal(ownerOfTicket , visitor_1);
 
 		}).catch(function(error){
 			console.log(error);
@@ -95,9 +96,31 @@ contract("Ticket", function(accounts){
 	});
 
 	//
-	it("transfer ticket to visitor_2", async()=>{
-		var ownerOfTicket = await KGEticket.ownerOf.call(ticketId);
-		assert.equal(ownerOfTicket, visitor_1);
+	it("transfer ticket from visitor_1 to visitor_2", async()=>{
+		var ticketPriceInContract = 
+			web3.fromWei(await KGEticket.getTicketValue(ticketId), "ether");
+		assert.equal(ticketPriceInContract, ticketPrice);
+		
+		// 잔고 확인
+		var balanceOfVisitor_2 = 
+			web3.fromWei(await KGEtoken.balanceOf(visitor_2), "ether");
+		assert.isTrue(ticketPriceInContract <= balanceOfVisitor_2 ,
+			"ticketPriceInContract - "+ticketPriceInContract+" : "+balanceOfVisitor_2+" - Balance"
+		);
+
+		// 토큰 전송 권한 확인
+		var allowanceOfVisitor_2 = 
+			web3.fromWei(await KGEtoken.allowance(visitor_2, visitor_1));
+		assert.isTrue(ticketPriceInContract <= allowanceOfVisitor_2 ,
+			"ticketPriceInContract - "+ticketPriceInContract+" : "+allowanceOfVisitor_2 +" - Allowance"
+		);
+
+		console.log("ticketPriceInContract : "+ticketPriceInContract);
+		console.log("allowanceOfVisitor_2: "+allowanceOfVisitor_2);
+
+		// 전송 전 ticketId 소유자 확인
+		var OwnerOfTicket = await KGEticket.ownerOf.call(ticketId);
+		assert.equal(OwnerOfTicket, visitor_1);
 
 		await KGEticket.transferTicket(visitor_2, ticketId, {from:visitor_1});
 

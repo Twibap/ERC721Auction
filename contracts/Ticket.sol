@@ -31,11 +31,11 @@ contract KGEticket is ERC721Token{
 	mapping(uint256 => bool) internal guaranteedTokensCheckIn;
 
 	// 티켓 거래용 전용 토큰
-	address tokenAddr;
+	KGEtoken token;
 
-	constructor(address _token) public ERC721Token(name, symbol){
-		tokenAddr = _token;
-	//	token = KGEtoken(_token);
+	constructor(KGEtoken _token) public ERC721Token(name, symbol){
+//		token = _token;
+		token = KGEtoken(_token);
 	}
 
 	/**
@@ -50,19 +50,20 @@ contract KGEticket is ERC721Token{
 	function transferTicket(address _to, uint256 _ticketId) public returns(bool){
 		require( msg.sender == ownerOf(_ticketId) );
 
-		KGEtoken token = KGEtoken(tokenAddr);
-
 		uint256 price = token.allowance(_to, msg.sender);
 		uint256 ticketVal = getTicketValue(_ticketId);
 
 		require(price > 0);	// KGEtoken으로만 거래 가능하다.
 
 		// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
-		if(price >= ticketVal){		
+		if(price > ticketVal){		
 			price = ticketVal;
 		}
-		// else is (pice < ticketVal)
+		// else is (pice <= ticketVal)
 
+		// 토큰 전송
+		// TODO revert 발생
+//		require(price <= token.allowance(_to, msg.sender));
 		if( token.transferFrom(_to, msg.sender, price) == false ){
 			return false;
 		}
@@ -120,9 +121,7 @@ contract KGEticket is ERC721Token{
 
 	function _setTicketPrice(uint256 _ticketId, uint256 _ticketPrice) internal{
 		require(exists(_ticketId));
-
-		uint256 TOKENDECIMAL = 10 ** 18;
-		ticketPrice[_ticketId] = _ticketPrice * TOKENDECIMAL;
+		ticketPrice[_ticketId] = _ticketPrice;
 	}
 
 }
