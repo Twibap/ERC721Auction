@@ -31,11 +31,18 @@ contract KGEticket is ERC721Token{
 	mapping(uint256 => bool) internal guaranteedTokensCheckIn;
 
 	// 티켓 거래용 전용 토큰
-	KGEtoken token;
+	KGEtoken public token;
 
 	constructor(KGEtoken _token) public ERC721Token(name, symbol){
-//		token = _token;
-		token = KGEtoken(_token);
+		require(_token != address(0));
+
+		token = _token;
+	//	token = KGEtoken(_token);
+	}
+
+	function allowanceToken(address _owner, address _spender)
+	public view returns(uint256){
+		return token.allowance(_owner, _spender);
 	}
 
 	/**
@@ -50,7 +57,7 @@ contract KGEticket is ERC721Token{
 	function transferTicket(address _to, uint256 _ticketId) public returns(bool){
 		require( msg.sender == ownerOf(_ticketId) );
 
-		uint256 price = token.allowance(_to, msg.sender);
+		uint256 price = token.allowance(_to, this);
 		uint256 ticketVal = getTicketValue(_ticketId);
 
 		require(price > 0);	// KGEtoken으로만 거래 가능하다.
@@ -69,9 +76,7 @@ contract KGEticket is ERC721Token{
 		}
 
 		approve(_to, _ticketId);
-		emit Approval(msg.sender, _to, _ticketId);
 		transferFrom(msg.sender, _to, _ticketId);
-		emit Transfer(msg.sender, _to, _ticketId);
 		return true;
 	}
 

@@ -13,7 +13,7 @@ const Ticket = artifacts.require("KGEticket");
  *	티켓 거래소 
  */
 
-contract("Ticket", function(accounts){
+contract("Ticket", async(accounts)=>{
 	var ticketCount = 10;
 	var manager = web3.eth.accounts[0];
 	var visitor_1 = web3.eth.accounts[1];
@@ -24,38 +24,27 @@ contract("Ticket", function(accounts){
 
 	var KGEticket;
 	var KGEtoken;
+
+	/**
+	 * Contract Deploy
+	 */
+	it("Deploy contract", async()=>{
+		KGEticket = await Ticket.deployed();
+		KGEtoken = await Token.deployed();
+
+//		var tokenInTicket = await KGEticket.token();
+//		assert.equal(KGEtoken.address, tokenInTicket.address);
+	});
 	
 	/**
-	 *	Ticket Contract 배포
+	 *	Ticket 발행
 	 */
-	it("contract deploy and mint ticket", function(){
-		Ticket.deployed().then(function(inst){
-			KGEticket = inst;
-			return KGEticket.name();
-		}).then(function(result){
-			console.log("Name is "+result);
-			return KGEticket.symbol();
-		}).then(function(result){
-			console.log("Symbol is "+result);
-			console.log("Deploy Successful!");
-			var ticketPriceWei = web3.toWei(ticketPrice, "ether");
-			return KGEticket.mintTicket(visitor_1, ticketId, ticketPriceWei,{from:manager});
+	it("mint ticket", async()=>{
+		var ticketPriceWei = web3.toWei(ticketPrice, "ether");	
+		await KGEticket.mintTicket(visitor_1, ticketId, ticketPriceWei, {from:manager});
 
-		}).then(async(result)=>{
-			console.log("Mint ticket Successful!");
-
-			// ticketId 발행 확인
-			var isExists = await KGEticket.exists.call(ticketId, {from:visitor_1});
-			assert.equal(isExists, true);
-
-			// ticketId 소유자 확인
-			var ownerOfTicket = await KGEticket.ownerOf.call(ticketId);
-			assert.equal(ownerOfTicket , visitor_1);
-
-		}).catch(function(error){
-			console.log(error);
-		});
-
+		assert.equal(true, await KGEticket.exists(ticketId));
+		assert.equal(visitor_1, await KGEticket.ownerOf(ticketId))
 	});
 
 //	it("Ticket transfer with no pay", function(){
@@ -68,78 +57,54 @@ contract("Ticket", function(accounts){
 //	});
 //	it("Ticket transfer with overpricing", function(){
 //	});
-	it("deploy Token constract", async()=>{
-		Token.deployed().then(function(inst){
-			KGEtoken = inst;
-		});
-	});
 
 	//
 	it("Mint Token to visitor_2", async()=>{
 		var mintAmountToken = 1000000; // 1 백만원
+		var mintAmountTokenWei = web3.toWei(mintAmountToken, "ether");
 
 		// Token 발행 to visitor 2
-		await KGEtoken.mint(visitor_2, web3.toWei(mintAmountToken, "ether"), {from:manager});
+		await KGEtoken.mint(visitor_2, mintAmountTokenWei, {from:manager});
 
 		var balanceOfVisitor_2 = 
 			web3.fromWei(await KGEtoken.balanceOf(visitor_2), "ether");
+
 		assert.equal(balanceOfVisitor_2, mintAmountToken);
 	});
 
-	//
-	it("approve token transfer from visitor_2 to visitor_1", async()=>{
-		await KGEtoken.approve(visitor_1, web3.toWei(ticketPrice,"ether"), {from: visitor_2});
-
-		var allowanceOfVisitor_2 = 
-			web3.fromWei(await KGEtoken.allowance(visitor_2, visitor_1));
-		assert.equal(allowanceOfVisitor_2, ticketPrice);
-	});
-
-	//
-	it("transfer ticket from visitor_1 to visitor_2", async()=>{
-		var ticketPriceInContract = 
-			web3.fromWei(await KGEticket.getTicketValue(ticketId), "ether");
-		assert.equal(ticketPriceInContract, ticketPrice);
-		
-		// 잔고 확인
-		var balanceOfVisitor_2 = 
-			web3.fromWei(await KGEtoken.balanceOf(visitor_2), "ether");
-		assert.isTrue(ticketPriceInContract <= balanceOfVisitor_2 ,
-			"ticketPriceInContract - "+ticketPriceInContract+" : "+balanceOfVisitor_2+" - Balance"
-		);
-
-		// 토큰 전송 권한 확인
-		var allowanceOfVisitor_2 = 
-			web3.fromWei(await KGEtoken.allowance(visitor_2, visitor_1));
-		assert.isTrue(ticketPriceInContract <= allowanceOfVisitor_2 ,
-			"ticketPriceInContract - "+ticketPriceInContract+" : "+allowanceOfVisitor_2 +" - Allowance"
-		);
-
-		console.log("ticketPriceInContract : "+ticketPriceInContract);
-		console.log("allowanceOfVisitor_2: "+allowanceOfVisitor_2);
-
-		// 전송 전 ticketId 소유자 확인
-		var OwnerOfTicket = await KGEticket.ownerOf.call(ticketId);
-		assert.equal(OwnerOfTicket, visitor_1);
-
-		await KGEticket.transferTicket(visitor_2, ticketId, {from:visitor_1});
-
-		var newOwnerOfTicket = await KGEticket.ownerOf.call(ticketId);
-		assert.equal(newOwnerOfTicket, visitor_2);
-	});
 
 	/**
-	 *	contract deploy and mint를 async와 await을 사용한 버전이다.
-	 *	약 300ms 정도 소요된다.
+	 *	티켓 전송 테스트
+	 *	Ticket : visitor_1 ===> visitor_2
+	 *	Token  : visitor_1 <=== visitor_2
+	 *
+	 *	1. visitor_2가 토큰 전송을 승인한다.
+	 *	2. visitor_1이 티켓을 전송하고 토큰을 받는다.
+	 *	3. 티켓의 소유자와 토큰 잔고를 확인한다.
 	 */
-//	it("contract deploy and mint with async/await", async()=>{
-//		KGEcoin = await Token.new();
-//		KGEticket = await Ticket.new(KGEcoin.address);
-//		
-//		await KGEticket.mintTicket(visitor_1, 1001, "Ticket Test",{from:manager});
-//
-//		let exists = await KGEticket.exists.call(1001);
-//		assert.equal(exists, true, "result is "+exists);
-//	});
+	it("Token Transfer", async()=>{
+		var beforeBalance = await KGEtoken.balanceOf(visitor_1);
+		var beforeOwner	= await KGEticket.ownerOf(ticketId);
+
+		// 1. token approve for transfer
+		var ticketPriceWei = web3.toWei(ticketPrice, "ether");
+		await KGEtoken.approve(KGEticket.address, ticketPriceWei, {from: visitor_2});
+//		var allowedOfVisitor_2 = 
+//			web3.fromWei(await KGEtoken.allowance(visitor_2, visitor_1));
+		var allowedOfVisitor_2 = 
+			web3.fromWei(await KGEticket.allowanceToken(visitor_2, KGEticket.address));
+		assert.isTrue(ticketPrice <= allowedOfVisitor_2);
+
+		// 2. ticket transfer
+		await KGEticket.transferTicket(visitor_2, ticketId, {from:visitor_1});
+
+		// 3. Ticket Owner and balance check
+		var afterBalance = await KGEtoken.balanceOf(visitor_1);
+		var afterOwner	= await KGEticket.ownerOf(ticketId);
+		assert.equal(ticketPriceWei, afterBalance - beforeBalance);
+		assert.isTrue(beforeOwner != afterOwner);
+
+	});
+
 });
 

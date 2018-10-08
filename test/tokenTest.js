@@ -52,12 +52,12 @@ contract('Token', function(accounts) {
 
 					if (log.event == "ExchangeRateChanged") {
 						// We found the event!
-						console.log("==========================");
-						console.log(log.event);
+//						console.log("==========================");
+//						console.log(log.event);
 
 						var start_Rate = log.args.previousRate;
 						var setted_Rate = log.args.newRate;
-						console.log(start_Rate+" to "+setted_Rate);
+//						console.log(start_Rate+" to "+setted_Rate);
 						break;
 					}
 				}
@@ -80,10 +80,10 @@ contract('Token', function(accounts) {
 
 					if (log.event == "OwnershipTransferred") {
 						// We found the event!
-						console.log("==========================");
-						console.log(log.event);
-
-						console.log(log.args);
+//						console.log("==========================");
+//						console.log(log.event);
+//
+//						console.log(log.args);
 						break;
 					}
 				}
@@ -106,17 +106,17 @@ contract('Token', function(accounts) {
 
 					if (log.event == "TokenPurchase") {
 						// We found the event!
-						console.log("==========================");
-						console.log(log.event+" by ETH");
-
-						console.log(log.args);
+//						console.log("==========================");
+//						console.log(log.event+" by ETH");
+//
+//						console.log(log.args);
 						return KGEtoken.balanceOf.call(user_ETH,{from:user_ETH});
 					}
 				}
 			})
 			.then(function(balance){
-				console.log("user_ETH's token balance");
-				console.log(web3.fromWei(balance)+"KGE");
+//				console.log("user_ETH's token balance");
+//				console.log(web3.fromWei(balance)+"KGE");
 			})
 			.catch(function(error){ console.log(error)});
 	});
@@ -127,6 +127,8 @@ contract('Token', function(accounts) {
 	 */
 	it("Buy Token by KRW", function(){
 		var tokenAmount = 1000000; // 1 백만
+		var tokenAmount = web3.toWei(tokenAmount, "ether");
+
 		KGEsale
 			.mintTokens(user_KRW, tokenAmount, {from:new_admin})
 			.then(function(result){
@@ -135,19 +137,53 @@ contract('Token', function(accounts) {
 
 					if (log.event == "TokenPurchase") {
 						// We found the event!
-						console.log("==========================");
-						console.log(log.event +" by KRW");
-
-						console.log(log.args);
+//						console.log("==========================");
+//						console.log(log.event +" by KRW");
+//
+//						console.log(log.args);
 
 						return KGEtoken.balanceOf.call(user_KRW,{from:user_KRW});
 					}
 				}
 			})
 			.then(function(balance){
-				console.log("user_KRW's token balance");
-				console.log(web3.fromWei(balance)+"KGE");
+//				console.log("user_KRW's token balance");
+//				console.log(web3.fromWei(balance)+"KGE");
 			})
 			.catch(function(error){ console.log(error)});
+	});
+
+	/**
+	 * ERC20 transfer() 기능 테스트
+	 *
+	 * 전송 전/후 receiver의 토큰 잔고를 비교한다.
+	 */
+	it("Transfer token", async()=>{
+		var sender = user_ETH;	// 30만 token 보유
+		var receiver = web3.eth.accounts[4];
+		var value = 100000; // 10만
+		value = web3.toWei(value, "ether");
+
+		var beforeBalance = await KGEtoken.balanceOf(receiver);
+		await KGEtoken.transfer(receiver, value, {from:sender});
+		var afterBalance = await KGEtoken.balanceOf(receiver);
+
+		assert.equal(value, afterBalance - beforeBalance);
+	});
+
+	/**
+	 *	ERC20의 approve와 transferFrom 기능 테스트
+	 */
+	it("Approve and TransferFrom", async()=>{
+		var sender = user_KRW;	// 100만 토큰 보유
+		var receiver = web3.eth.accounts[5];
+		var value = 100000;	// 10만
+		value = web3.toWei(value, "ether");
+
+		var beforeBalance = await KGEtoken.balanceOf(receiver);
+		await KGEtoken.approve(receiver, value, {from:sender});
+		await KGEtoken.transferFrom(sender, receiver, value, {from:receiver});
+		var afterBalance = await KGEtoken.balanceOf(receiver);
+		assert.equal(value, afterBalance - beforeBalance);
 	});
 });
