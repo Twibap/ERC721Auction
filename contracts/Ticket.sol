@@ -75,8 +75,8 @@ contract KGEticket is ERC721Token{
 			return false;
 		}
 
-		approve(_to, _ticketId);
-		transferFrom(msg.sender, _to, _ticketId);
+		super.approve(_to, _ticketId);
+		super.transferFrom(msg.sender, _to, _ticketId);
 		return true;
 	}
 
@@ -127,6 +127,18 @@ contract KGEticket is ERC721Token{
 	function _setTicketPrice(uint256 _ticketId, uint256 _ticketPrice) internal{
 		require(exists(_ticketId));
 		ticketPrice[_ticketId] = _ticketPrice;
+	}
+
+	/**
+	** P2P 거래 방지를 위해 다음 기능 호출을 방지한다.
+	** approve, transferFrom
+	** 해당 함수가 필요한 지점에서는 [super.]를 사용한다.
+	*/
+	function approve(address _to, uint256 _tokenId) public {
+		(_to); (_tokenId);
+	}
+	function transferFrom(address _from, address _to, uint256 _tokenId) public {
+		(_from); (_to); (_tokenId);
 	}
 
 }
