@@ -10,7 +10,10 @@ import "../node_modules/openzeppelin-solidity/contracts/AddressUtils.sol";
 **	중개인이 없어도 최초 발행 가격을 초과하여 거래하지 않도록 구현한다.
 **	최초 발행 가격을 초과하는 경우 초과된 금액에 대해 티켓을 발행한 Smart Contract로 환수한다.
 **
+** 	TODO
 **	티켓을 사용한 후 더이상 거래할 수 없다.
+**	재판매 기능
+**	환불 기능
 */
 contract KGEticket is ERC721Token{
 
