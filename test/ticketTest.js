@@ -16,8 +16,8 @@ const Ticket = artifacts.require("KGEticket");
 contract("Ticket", async(accounts)=>{
 	var ticketCount = 10;
 	var manager = web3.eth.accounts[0];
-	var visitor_1 = web3.eth.accounts[1];
-	var visitor_2 = web3.eth.accounts[2];
+	var ticketOwner = web3.eth.accounts[1];
+	var ticketBuyer = web3.eth.accounts[2];
 
 	var ticketId = 1001;
 	var ticketPrice = 100000;	// 10 만원
@@ -41,15 +41,15 @@ contract("Ticket", async(accounts)=>{
 	 */
 	it("mint ticket", async()=>{
 		var ticketPriceWei = web3.toWei(ticketPrice, "ether");	
-		await KGEticket.mintTicket(visitor_1, ticketId, ticketPriceWei, {from:manager});
+		await KGEticket.mintTicket(ticketOwner, ticketId, ticketPriceWei, {from:manager});
 
 		assert.equal(true, await KGEticket.exists(ticketId));
-		assert.equal(visitor_1, await KGEticket.ownerOf(ticketId))
+		assert.equal(ticketOwner, await KGEticket.ownerOf(ticketId))
 	});
 
 //	it("Ticket transfer with no pay", function(){
 //		Ticket.deployed().then(function(inst){
-//			return inst.transferTicket(visitor_2, ticketId, {from:visitor_1});
+//			return inst.transferTicket(ticketBuyer, ticketId, {from:ticketOwner});
 //		}).then(function(result){
 //			console.log(result);
 //			assert.equal(result, false);
@@ -57,17 +57,26 @@ contract("Ticket", async(accounts)=>{
 //	});
 //	it("Ticket transfer with overpricing", function(){
 //	});
+	
+	// 임의로 transfer 기능 호출하는 경우
+	it("Bad transfer test", async()=>{
+		await KGEticket.approve(ticketBuyer, ticketId, {from:ticketOwner});
+		await KGEticket.transferFrom(ticketOwner, ticketBuyer, ticketId, {from:ticketOwner});
 
-	//
-	it("Mint Token to visitor_2", async()=>{
+		// 티켓 소유자가 바뀌지 않아야 한다.
+		assert.equal(ticketOwner, await KGEticket.ownerOf(ticketId))
+	});
+
+	// 티켓 구매에 필요한 토큰 발행
+	it("Mint Token to ticketBuyer", async()=>{
 		var mintAmountToken = 1000000; // 1 백만원
 		var mintAmountTokenWei = web3.toWei(mintAmountToken, "ether");
 
 		// Token 발행 to visitor 2
-		await KGEtoken.mint(visitor_2, mintAmountTokenWei, {from:manager});
+		await KGEtoken.mint(ticketBuyer, mintAmountTokenWei, {from:manager});
 
 		var balanceOfVisitor_2 = 
-			web3.fromWei(await KGEtoken.balanceOf(visitor_2), "ether");
+			web3.fromWei(await KGEtoken.balanceOf(ticketBuyer), "ether");
 
 		assert.equal(balanceOfVisitor_2, mintAmountToken);
 	});
@@ -75,31 +84,31 @@ contract("Ticket", async(accounts)=>{
 
 	/**
 	 *	티켓 전송 테스트
-	 *	Ticket : visitor_1 ===> visitor_2
-	 *	Token  : visitor_1 <=== visitor_2
+	 *	Ticket : ticketOwner ===> ticketBuyer
+	 *	Token  : ticketOwner <=== ticketBuyer
 	 *
-	 *	1. visitor_2가 토큰 전송을 승인한다.
-	 *	2. visitor_1이 티켓을 전송하고 토큰을 받는다.
+	 *	1. ticketBuyer가 토큰 전송을 승인한다.
+	 *	2. ticketOwner이 티켓을 전송하고 토큰을 받는다.
 	 *	3. 티켓의 소유자와 토큰 잔고를 확인한다.
 	 */
 	it("Token Transfer", async()=>{
-		var beforeBalance = await KGEtoken.balanceOf(visitor_1);
+		var beforeBalance = await KGEtoken.balanceOf(ticketOwner);
 		var beforeOwner	= await KGEticket.ownerOf(ticketId);
 
 		// 1. token approve for transfer
 		var ticketPriceWei = web3.toWei(ticketPrice, "ether");
-		await KGEtoken.approve(KGEticket.address, ticketPriceWei, {from: visitor_2});
+		await KGEtoken.approve(KGEticket.address, ticketPriceWei, {from: ticketBuyer});
 //		var allowedOfVisitor_2 = 
-//			web3.fromWei(await KGEtoken.allowance(visitor_2, visitor_1));
+//			web3.fromWei(await KGEtoken.allowance(ticketBuyer, ticketOwner));
 		var allowedOfVisitor_2 = 
-			web3.fromWei(await KGEticket.allowanceToken(visitor_2, KGEticket.address));
+			web3.fromWei(await KGEticket.allowanceToken(ticketBuyer, KGEticket.address));
 		assert.isTrue(ticketPrice <= allowedOfVisitor_2);
 
 		// 2. ticket transfer
-		await KGEticket.transferTicket(visitor_2, ticketId, {from:visitor_1});
+		await KGEticket.transferTicket(ticketBuyer, ticketId, {from:ticketOwner});
 
 		// 3. Ticket Owner and balance check
-		var afterBalance = await KGEtoken.balanceOf(visitor_1);
+		var afterBalance = await KGEtoken.balanceOf(ticketOwner);
 		var afterOwner	= await KGEticket.ownerOf(ticketId);
 		assert.equal(ticketPriceWei, afterBalance - beforeBalance);
 		assert.isTrue(beforeOwner != afterOwner);
