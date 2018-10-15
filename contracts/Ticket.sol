@@ -28,10 +28,17 @@ contract KGEticket is ERC721Token{
 	mapping (uint256 => uint256) internal ticketPrice;
 
 	// 공연 기획자 주소 == 2차 거래 시 발행 가격 초과금액 환수할 주소
-	mapping (uint256 => address) internal ticketGuarantor;
+	mapping (uint256 => address) internal ticketArtist;
+
+	// 공연 시간
+	mapping(uint256 => uint256) internal showtime; 
+
+	// 좌석
 
 	// 티켓 사용 여부 기록 -> RSA 활용???
 	mapping(uint256 => bool) internal guaranteedTokensCheckIn;
+
+
 
 	// 티켓 거래용 전용 토큰
 	KGEtoken public token;
@@ -67,6 +74,9 @@ contract KGEticket is ERC721Token{
 
 		// 거래가격이 티켓 가격을 초과하더라도 티켓 가격만큼만 전송된다.
 		if(price > ticketVal){		
+			uint256 overPrice = price.sub(ticketVal);
+			token.transferFrom(_to, artistOf(_ticketId), overPrice); // 초과금 환수
+
 			price = ticketVal;
 		}
 		// else is (pice <= ticketVal)
@@ -75,6 +85,7 @@ contract KGEticket is ERC721Token{
 		// TODO revert 발생
 //		require(price <= token.allowance(_to, msg.sender));
 		if( token.transferFrom(_to, msg.sender, price) == false ){
+			// TODO 초과금 환수 후 balance 부족한 경우 revert 일어나는지 확인 필요
 			return false;
 		}
 
@@ -94,16 +105,16 @@ contract KGEticket is ERC721Token{
 	/**
 	** 티켓 ID로 공연 기획자 주소를 확인한다.
 	*/
-	function guarantorOf(uint256 _ticketId) public view returns(address){
-		address guarantor = ticketGuarantor[_ticketId];
-		require(guarantor != address(0));
-		return guarantor;
+	function artistOf(uint256 _ticketId) public view returns(address){
+		address artist = ticketArtist[_ticketId];
+		require(artist != address(0));
+		return artist;
 	}
 
 	/**	Override by Twibap
-	** 티켓 발행 단계에서 Guarantor를 등록한다.
-	** 이후 Guarantor는 수정되지 않는다.
-	** Guarantor는 TicketSale Contract이다.
+	** 티켓 발행 단계에서 Artist를 등록한다.
+	** 이후 Artist는 수정되지 않는다.
+	** Artist는 TicketSale Contract이다.
 	** TicketSale Contract 소유자는 바뀔 수 있다.
 	**
 	 * @dev Internal function to mint a new token
@@ -115,8 +126,8 @@ contract KGEticket is ERC721Token{
 		require(_to != address(0));
 		addTokenTo(_to, _tokenId);
 
-		// Guarantor 등록
-		ticketGuarantor[_tokenId] = _to;
+		// Artist 등록
+		ticketArtist[_tokenId] = _to;
 
 		emit Transfer(address(0), _to, _tokenId);
 	}
