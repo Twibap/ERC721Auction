@@ -161,19 +161,10 @@ contract("Ticket", async(accounts)=>{
 		var afterOwnerBalance = await KGEtoken.balanceOf(ticketOwner);
 		var afterOwner	= await KGEticket.ownerOf(ticketId);
 
-		var incrementArtist = afterArtistBalance - beforeArtistBalance;
-		var incrementOwner = afterOwnerBalance - beforeOwnerBalance;
-		var totalIncrement = incrementArtist + incrementOwner;
-
-		console.log("beforeArtistBalance : "+web3.fromWei(beforeArtistBalance), "ether");
-		console.log("afterArtistBalance : "+web3.fromWei(afterArtistBalance),"ether");
-		console.log("incrementArtist: "+web3.fromWei(incrementArtist),"ether");
-		console.log("beforeOwnerBalance : "+web3.fromWei(beforeOwnerBalance), "ether");
-		console.log("afterOwnerBalance : "+web3.fromWei(afterOwnerBalance),"ether");
-		console.log("incrementOwner: "+web3.fromWei(incrementOwner),"ether");
-		console.log("add each increment: "+web3.fromWei(incrementArtist+incrementOwner),"ether");
-		console.log("total increment: "+web3.fromWei(totalIncrement),"ether");
 		/**
+		 *	https://github.com/MikeMcl/bignumber.js/#use
+		 *	잔고 연산 시 주의사항
+		 *	BigNumber.js의 내장 함수를 사용하지 않으면 정밀도 손실이 일어난다.
 		 * beforeArtistBalance : 200000 ether
 		 * afterArtistBalance : 400000 ether
 		 * incrementArtist: 200000 ether
@@ -183,9 +174,12 @@ contract("Ticket", async(accounts)=>{
 		 * add each increment: 299999.99999999997 ether	?????????????????????
 		 * total increment: 299999.99999999997 ether	?????????????????????
 		 */
+		var incrementArtist = afterArtistBalance.minus(beforeArtistBalance);
+		var incrementOwner = afterOwnerBalance.minus(beforeOwnerBalance);
+		var totalIncrement = incrementArtist.plus(incrementOwner);
 
 		assert.isTrue(beforeOwner != afterOwner);
-		//assert.equal(ticketOverPrice, web3.fromWei(incrementArtist + incrementOwner), "ether");
+		assert.equal(ticketOverPrice, web3.fromWei(totalIncrement, "ether"));
 
 	});
 
