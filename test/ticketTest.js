@@ -82,10 +82,10 @@ contract("Ticket", async(accounts)=>{
 		var beforeBalance = await KGEtoken.balanceOf(ticketOwner);
 
 		await KGEtoken.approve(KGEticket.address, web3.toWei(ticketPrice, "ether"), {from:ticketOwner});
-		await KGEticket.transferTicket(ticketOwner, ticketId, {from:ticketArtist});
+		await KGEticket.exchange(ticketOwner, ticketId, {from:ticketArtist});
 
 		await KGEtoken.approve(KGEticket.address, web3.toWei(ticketPrice, "ether"), {from:ticketOwner});
-		await KGEticket.transferTicket(ticketOwner, ticketId_Overpriced, {from:ticketArtist});
+		await KGEticket.exchange(ticketOwner, ticketId_Overpriced, {from:ticketArtist});
 
 		var afterBalance = await KGEtoken.balanceOf(ticketOwner);
 		
@@ -127,7 +127,7 @@ contract("Ticket", async(accounts)=>{
 		assert.isTrue(ticketPrice <= allowedOfVisitor_2);
 
 		// 2. ticket transfer
-		await KGEticket.transferTicket(ticketBuyer, ticketId, {from:ticketOwner});
+		await KGEticket.exchange(ticketBuyer, ticketId, {from:ticketOwner});
 
 		// 3. Ticket Owner and balance check
 		var afterBalance = await KGEtoken.balanceOf(ticketOwner);
@@ -154,7 +154,7 @@ contract("Ticket", async(accounts)=>{
 		assert.isTrue(ticketOverPrice <= allowedOfVisitor_2);
 
 		// 2. ticket transfer
-		await KGEticket.transferTicket(ticketBuyer, ticketId_Overpriced, {from:ticketOwner});
+		await KGEticket.exchange(ticketBuyer, ticketId_Overpriced, {from:ticketOwner});
 
 		// 3. Ticket Owner and balance check
 		var afterArtistBalance = await KGEtoken.balanceOf(ticketArtist);
@@ -185,7 +185,7 @@ contract("Ticket", async(accounts)=>{
 
 //	it("Ticket transfer with no pay", function(){
 //		Ticket.deployed().then(function(inst){
-//			return inst.transferTicket(ticketBuyer, ticketId, {from:ticketOwner});
+//			return inst.exchange(ticketBuyer, ticketId, {from:ticketOwner});
 //		}).then(function(result){
 //			console.log(result);
 //			assert.equal(result, false);

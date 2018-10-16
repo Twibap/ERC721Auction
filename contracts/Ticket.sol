@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./Token.sol";
+import "./ExchangeableToERC20.sol";
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../node_modules/openzeppelin-solidity/contracts/AddressUtils.sol";
@@ -15,7 +16,7 @@ import "../node_modules/openzeppelin-solidity/contracts/AddressUtils.sol";
 **	재판매 기능
 **	환불 기능
 */
-contract KGEticket is ERC721Token{
+contract KGEticket is ERC721Token, ExchangeableToERC20{
 
 	// KGEbasicTicket
 	using SafeMath for uint256;
@@ -64,8 +65,8 @@ contract KGEticket is ERC721Token{
 	**	@param 	_ticketId 	티켓 고유번호
 	**	@dev 	msg.sender	티켓 판매자
 	*/
-	function transferTicket(address _to, uint256 _ticketId) public returns(bool){
-		require( msg.sender == ownerOf(_ticketId) );
+	function exchange(address _to, uint256 _ticketId) public returns(bool){
+//		require( msg.sender == ownerOf(_ticketId) );
 
 		uint256 price = token.allowance(_to, this);
 		uint256 ticketVal = getTicketValue(_ticketId);
@@ -89,7 +90,7 @@ contract KGEticket is ERC721Token{
 			return false;
 		}
 
-		super.approve(_to, _ticketId);
+//		super.approve(_to, _ticketId);
 		super.transferFrom(msg.sender, _to, _ticketId);
 		return true;
 	}
