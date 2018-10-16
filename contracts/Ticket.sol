@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./Token.sol";
-import "./ExchangeableToERC20.sol";
+import "./auction/ExchangeableToERC20.sol";
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../node_modules/openzeppelin-solidity/contracts/AddressUtils.sol";
