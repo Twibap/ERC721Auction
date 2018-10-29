@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./Token.sol";
-import "./auction/ExchangeableToERC20.sol";
+import "./auction/contracts/ExchangeableToERC20.sol";
 import "../node_modules/openzeppelin-solidity/contracts/token/ERC721/ERC721Token.sol";
 import "../node_modules/openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../node_modules/openzeppelin-solidity/contracts/AddressUtils.sol";
@@ -44,11 +44,8 @@ contract KGEticket is ERC721Token, ExchangeableToERC20{
 	// 티켓 거래용 전용 토큰
 	KGEtoken public token;
 
-	constructor(KGEtoken _token) public ERC721Token(name, symbol){
-		require(_token != address(0));
-
-		token = _token;
-	//	token = KGEtoken(_token);
+	constructor(KGEtoken _token) 
+		public ERC721Token(name, symbol) ExchangeableToERC20(_token) {
 	}
 
 	function allowanceToken(address _owner, address _spender)

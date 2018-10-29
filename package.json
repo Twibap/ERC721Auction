@@ -12,6 +12,7 @@
   "author": "Twibap",
   "license": "MIT",
   "dependencies": {
-    "openzeppelin-solidity": "^1.12.0"
+    "openzeppelin-solidity": "^1.12.0",
+    "solc": "^0.4.25"
   }
 }
